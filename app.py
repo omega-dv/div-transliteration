@@ -45,7 +45,7 @@ def transliterate():
             all_paragraphs_thaana = []
 
             # Helper function to split text into chunks of max N words
-            def split_into_word_chunks(text, max_words=15):
+            def split_into_word_chunks(text, max_words=20):
                 words = text.split()
                 chunks = []
                 for i in range(0, len(words), max_words):
@@ -103,8 +103,8 @@ def transliterate():
 
                         # Split phrase into word chunks if too long
                         word_count = len(phrase_text.split())
-                        if word_count > 15:
-                            chunks = split_into_word_chunks(phrase_text, max_words=15)
+                        if word_count > 20:
+                            chunks = split_into_word_chunks(phrase_text, max_words=20)
                         else:
                             chunks = [phrase_text]
 
@@ -133,6 +133,7 @@ def transliterate():
                                 do_sample=False,
                                 early_stopping=False,
                                 length_penalty=1.2,
+                                repetition_penalty=1.05,  # Very subtle for character-level model
                             )
 
                             # Decode chunk
