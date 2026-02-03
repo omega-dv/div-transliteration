@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dhivehi Latin to Thaana Transliteration</title>
     <style>
+        /* Load Faruma font */
+        @font-face {
+            font-family: 'Faruma';
+            src: url('/static/fonts/Faruma.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -13,20 +21,15 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f5f5f5;
-            min-height: 100vh;
-            padding: 20px;
+            background: white;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
         }
 
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-            border: 1px solid #e0e0e0;
-        }
+        /* Container removed - content directly in body */
 
         .header {
             background: #000;
@@ -39,6 +42,7 @@
         .header h1 {
             font-size: 32px;
             margin-bottom: 10px;
+            font-family: 'Faruma', 'MV Waheed', 'MV Faseyha', Arial, sans-serif;
         }
 
         .header p {
@@ -47,17 +51,26 @@
         }
 
         .content {
-            padding: 40px;
+            padding: 40px 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
         }
 
         .io-container {
             display: flex;
             gap: 30px;
             margin-bottom: 30px;
+            flex: 1;
         }
 
         .input-section, .output-section {
             flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         label {
@@ -85,13 +98,14 @@
         }
 
         .latin-input, .thaana-output {
-            height: 300px;
+            flex: 1;
+            min-height: 200px;
         }
 
         .thaana-output {
             direction: rtl;
             text-align: right;
-            font-family: 'MV Waheed', 'Faruma', 'MV Faseyha', Arial, sans-serif;
+            font-family: 'Faruma', 'MV Waheed', 'MV Faseyha', Arial, sans-serif;
             background: #fafafa;
             font-size: 24px;
             line-height: 1.6;
@@ -238,50 +252,44 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🌊 Dhivehi Transliteration</h1>
+    <div class="header">
+            <h1>ލެޓިނުން ތާނައަށް</h1>
             <p>Convert Latin script to Thaana script using AI</p>
-            <div>
-                <span class="badge">ByT5 Model</span>
-                <span class="badge">Real-time</span>
-                <span class="badge">RTL Support</span>
-            </div>
         </div>
 
         <div class="content">
             <div class="io-container">
                 <div class="input-section">
-                    <label for="latinInput">📝 Enter Latin Text:</label>
+                    <label for="latinInput">Enter Latin Text:</label>
                     <textarea
                         id="latinInput"
                         class="latin-input"
-                        placeholder="Type or paste Latin text here... (e.g., Assalaamu alaikum)"
+                        placeholder="Type or paste Latin text here..."
                     ></textarea>
                 </div>
 
                 <div class="output-section">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label for="thaanaOutput">ތާނަ Thaana Output:</label>
+                        <label for="thaanaOutput">Thaana Output:</label>
                         <button onclick="copyThaana()" id="copyBtn" style="padding: 6px 16px; font-size: 13px; display: none;">
-                            📋 Copy
+                            Copy
                         </button>
                     </div>
                     <textarea
                         id="thaanaOutput"
                         class="thaana-output"
                         readonly
-                        placeholder="Thaana script will appear here..."
+                        placeholder="ތާނައަށް ޓްރާންސްލިޓެރޭޓް ކުރުން..."
                     ></textarea>
                 </div>
             </div>
 
             <div class="button-container">
                 <button onclick="transliterate()" id="translateBtn">
-                    ✨ Transliterate to Thaana
+                    Transliterate to Thaana
                 </button>
                 <button onclick="stopGeneration()" id="stopBtn" style="display: none; background: #dc3545;">
-                    ⏹️ Stop Generation
+                    Stop Generation
                 </button>
             </div>
 
@@ -291,12 +299,11 @@
 
             <div class="error" id="error"></div>
 
-        </div>
+    </div>
 
-        <div class="footer">
-            <p>Powered by <strong>Neobe/dhivehi-byt5-latin2thaana-v1</strong> | Built with ❤️ for the Dhivehi community</p>
-            <p style="margin-top: 5px; font-size: 12px;">Model: ByT5 | Framework: Hugging Face Transformers | Backend: Flask</p>
-        </div>
+    <div class="footer">
+        <p>Powered by <strong>Neobe/dhivehi-byt5-latin2thaana-v1</strong></p>
+        <p style="margin-top: 5px; font-size: 12px;">Model: ByT5 | Framework: Hugging Face Transformers</p>
     </div>
 
     <script>
