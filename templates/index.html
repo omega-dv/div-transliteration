@@ -107,7 +107,7 @@
             text-align: right;
             font-family: 'Faruma', 'MV Waheed', 'MV Faseyha', Arial, sans-serif;
             background: #fafafa;
-            font-size: 24px;
+            font-size: 18px;
             line-height: 1.6;
         }
 
@@ -388,6 +388,7 @@
                             translateBtn.disabled = false;
                             translateBtn.style.display = 'inline-block';
                             stopBtn.style.display = 'none';
+                            thaanaOutput.classList.remove('streaming');
                             currentReader = null;
                             return;
                         }

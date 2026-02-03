@@ -35,7 +35,7 @@ def transliterate():
     def generate():
         try:
             # Send initial status
-            yield f"data: {json.dumps({'status': 'Starting...', 'request_id': request_id})}\n\n"
+            yield f"data: {json.dumps({'status': 'Starting...', 'request_id': request_id, 'progress': 0})}\n\n"
 
             # Store that this generation is active
             active_generations[request_id] = True
@@ -43,6 +43,19 @@ def transliterate():
             # Split text into paragraphs first (preserve paragraph breaks)
             paragraphs = text.split('\n\n')
             all_paragraphs_thaana = []
+
+            # Calculate total sentences for progress tracking
+            total_sentences_all = 0
+            for paragraph in paragraphs:
+                if paragraph.strip():
+                    sentence_pattern = r'[^.!?]+[.!?]+|[^.!?]+$'
+                    sentences = re.findall(sentence_pattern, paragraph)
+                    sentences = [s.strip() for s in sentences if s.strip()]
+                    if not sentences:
+                        sentences = [paragraph]
+                    total_sentences_all += len(sentences)
+
+            completed_sentences = 0
 
             # Helper function to split text into overlapping chunks
             def split_into_word_chunks(text, max_words=20, overlap=4):
@@ -135,12 +148,16 @@ def transliterate():
                                 yield f"data: {json.dumps({'status': 'Stopped', 'thaana': ' '.join(all_thaana), 'partial': True})}\n\n"
                                 return
 
-                            # Update status
+                            # Update status with progress
                             if total_chunks > 1:
                                 status_msg = f'Sentence {sent_idx}/{total_sentences}, chunk {chunk_idx}/{total_chunks}...'
                             else:
                                 status_msg = f'Processing sentence {sent_idx}/{total_sentences}...'
-                            yield f"data: {json.dumps({'status': status_msg, 'request_id': request_id})}\n\n"
+
+                            # Calculate progress percentage
+                            progress = int((completed_sentences / total_sentences_all) * 100) if total_sentences_all > 0 else 0
+
+                            yield f"data: {json.dumps({'status': status_msg, 'request_id': request_id, 'progress': progress})}\n\n"
 
                             # Tokenize and generate with full chunk (including overlap for context)
                             inputs = tokenizer(chunk_text, return_tensors="pt", truncation=False, padding=False)
@@ -186,11 +203,17 @@ def transliterate():
 
                     all_thaana.append(sentence_thaana)
 
+                    # Increment completed sentences count
+                    completed_sentences += 1
+
+                    # Calculate progress percentage
+                    progress = int((completed_sentences / total_sentences_all) * 100) if total_sentences_all > 0 else 0
+
                     # Send partial result with all completed paragraphs + current progress
                     current_paragraph_progress = ' '.join(all_thaana)
                     all_progress = all_paragraphs_thaana + [current_paragraph_progress]
                     partial_result = '\n\n'.join(all_progress)
-                    yield f"data: {json.dumps({'status': f'Sentence {sent_idx}/{total_sentences} complete', 'thaana': partial_result, 'partial': True})}\n\n"
+                    yield f"data: {json.dumps({'status': f'Sentence {sent_idx}/{total_sentences} complete', 'thaana': partial_result, 'partial': True, 'progress': progress})}\n\n"
 
                 # After processing all sentences in the paragraph, join them
                 paragraph_thaana = ' '.join(all_thaana)
@@ -198,7 +221,7 @@ def transliterate():
 
             # Join all paragraphs with double newlines (preserve paragraph breaks)
             final_thaana = '\n\n'.join(all_paragraphs_thaana)
-            yield f"data: {json.dumps({'status': 'Complete!', 'thaana': final_thaana, 'latin': text, 'partial': False})}\n\n"
+            yield f"data: {json.dumps({'status': 'Complete!', 'thaana': final_thaana, 'latin': text, 'partial': False, 'progress': 100})}\n\n"
 
             # Cleanup
             if request_id in active_generations:
