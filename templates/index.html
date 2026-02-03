@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dhivehi Latin to Thaana Transliteration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .input-section, .output-section {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            resize: vertical;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .latin-input {
+            height: 120px;
+        }
+
+        .thaana-output {
+            direction: rtl;
+            text-align: right;
+            font-family: 'MV Waheed', 'Faruma', 'MV Faseyha', Arial, sans-serif;
+            height: 120px;
+            background: #f9f9f9;
+            font-size: 24px;
+            line-height: 1.6;
+        }
+
+        .thaana-output.streaming {
+            background: linear-gradient(90deg, #f9f9f9 0%, #e8f0ff 50%, #f9f9f9 100%);
+            background-size: 200% 100%;
+            animation: shimmer 2s ease-in-out infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .examples {
+            background: #f0f4ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 30px;
+        }
+
+        .examples h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .example-item {
+            background: white;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-left: 4px solid #667eea;
+        }
+
+        .example-item:hover {
+            background: #e8f0ff;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .progress-status {
+            margin-top: 10px;
+            color: #667eea;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #cc0000;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .error.active {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-size: 14px;
+            border-top: 1px solid #eee;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌊 Dhivehi Transliteration</h1>
+            <p>Convert Latin script to Thaana script using AI</p>
+            <div>
+                <span class="badge">ByT5 Model</span>
+                <span class="badge">Real-time</span>
+                <span class="badge">RTL Support</span>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="input-section">
+                <label for="latinInput">📝 Enter Latin Text:</label>
+                <textarea
+                    id="latinInput"
+                    class="latin-input"
+                    placeholder="Type or paste Latin text here... (e.g., Assalaamu alaikum)"
+                ></textarea>
+            </div>
+
+            <div class="button-container">
+                <button onclick="transliterate()" id="translateBtn">
+                    ✨ Transliterate to Thaana
+                </button>
+                <button onclick="stopGeneration()" id="stopBtn" style="display: none; background: #dc3545;">
+                    ⏹️ Stop Generation
+                </button>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="progress-status" id="progressStatus">Generating Thaana text...</div>
+            </div>
+
+            <div class="error" id="error"></div>
+
+            <div class="output-section">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <label for="thaanaOutput">ތާނަ Thaana Output:</label>
+                    <button onclick="copyThaana()" id="copyBtn" style="padding: 8px 20px; font-size: 14px; background: #28a745; display: none;">
+                        📋 Copy
+                    </button>
+                </div>
+                <textarea
+                    id="thaanaOutput"
+                    class="thaana-output"
+                    readonly
+                    placeholder="Thaana script will appear here..."
+                ></textarea>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <p>Powered by <strong>Neobe/dhivehi-byt5-latin2thaana-v1</strong> | Built with ❤️ for the Dhivehi community</p>
+            <p style="margin-top: 5px; font-size: 12px;">Model: ByT5 | Framework: Hugging Face Transformers | Backend: Flask</p>
+        </div>
+    </div>
+
+    <script>
+        const latinInput = document.getElementById('latinInput');
+        const thaanaOutput = document.getElementById('thaanaOutput');
+        const translateBtn = document.getElementById('translateBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const loading = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        // Store current reader for cancellation
+        let currentReader = null;
+
+        // Allow Enter key to transliterate
+        latinInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                transliterate();
+            }
+        });
+
+        function transliterate() {
+            const text = latinInput.value.trim();
+
+            if (!text) {
+                showError('Please enter some text to transliterate');
+                return;
+            }
+
+            // Show loading state
+            loading.classList.add('active');
+            translateBtn.disabled = true;
+            translateBtn.style.display = 'none';
+            stopBtn.style.display = 'inline-block';
+            errorDiv.classList.remove('active');
+            thaanaOutput.value = '';
+            thaanaOutput.classList.remove('streaming');
+            document.getElementById('copyBtn').style.display = 'none';
+            document.getElementById('progressStatus').textContent = 'Starting...';
+
+            // Create EventSource for Server-Sent Events
+            const eventSource = new EventSource('/transliterate?' + new URLSearchParams({
+                text: text
+            }));
+
+            // Use fetch with POST instead of EventSource (EventSource doesn't support POST)
+            fetch('/transliterate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ text: text })
+            }).then(response => {
+                const reader = response.body.getReader();
+                currentReader = reader;  // Store for cancellation
+                const decoder = new TextDecoder();
+
+                function readStream() {
+                    reader.read().then(({ done, value }) => {
+                        if (done) {
+                            loading.classList.remove('active');
+                            translateBtn.disabled = false;
+                            translateBtn.style.display = 'inline-block';
+                            stopBtn.style.display = 'none';
+                            currentReader = null;
+                            return;
+                        }
+
+                        const chunk = decoder.decode(value);
+                        const lines = chunk.split('\n');
+
+                        lines.forEach(line => {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.substring(6));
+
+                                    if (data.error) {
+                                        showError(data.error);
+                                        loading.classList.remove('active');
+                                        translateBtn.disabled = false;
+                                        translateBtn.style.display = 'inline-block';
+                                        stopBtn.style.display = 'none';
+                                        currentReader = null;
+                                        return;
+                                    }
+
+                                    if (data.status) {
+                                        document.getElementById('progressStatus').textContent = data.status;
+                                    }
+
+                                    if (data.thaana) {
+                                        // Update output with streaming or final result
+                                        thaanaOutput.value = data.thaana;
+
+                                        // Show copy button when there's text
+                                        if (data.thaana) {
+                                            document.getElementById('copyBtn').style.display = 'inline-block';
+                                        }
+
+                                        // Update status message and visual effects for streaming
+                                        if (data.partial) {
+                                            document.getElementById('progressStatus').textContent = 'Streaming text... ✨';
+                                            thaanaOutput.classList.add('streaming');
+                                        } else {
+                                            thaanaOutput.classList.remove('streaming');
+                                        }
+
+                                        // Hide loading only when generation is complete (not partial)
+                                        if (!data.partial) {
+                                            setTimeout(() => {
+                                                loading.classList.remove('active');
+                                                translateBtn.disabled = false;
+                                                translateBtn.style.display = 'inline-block';
+                                                stopBtn.style.display = 'none';
+                                                currentReader = null;
+                                            }, 300);
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Ignore parsing errors for incomplete chunks
+                                }
+                            }
+                        });
+
+                        readStream();
+                    });
+                }
+
+                readStream();
+            }).catch(error => {
+                showError('Network error: ' + error.message);
+                loading.classList.remove('active');
+                translateBtn.disabled = false;
+                translateBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+                currentReader = null;
+            });
+        }
+
+        function stopGeneration() {
+            if (currentReader) {
+                currentReader.cancel();
+                currentReader = null;
+            }
+            loading.classList.remove('active');
+            translateBtn.disabled = false;
+            translateBtn.style.display = 'inline-block';
+            stopBtn.style.display = 'none';
+            thaanaOutput.classList.remove('streaming');
+            setTimeout(() => {
+                document.getElementById('progressStatus').textContent = 'Stopped';
+            }, 100);
+        }
+
+        function copyThaana() {
+            const text = thaanaOutput.value;
+            if (!text) {
+                showError('No text to copy');
+                return;
+            }
+
+            navigator.clipboard.writeText(text).then(() => {
+                const copyBtn = document.getElementById('copyBtn');
+                const originalText = copyBtn.textContent;
+                copyBtn.textContent = '✅ Copied!';
+                copyBtn.style.background = '#28a745';
+                setTimeout(() => {
+                    copyBtn.textContent = originalText;
+                }, 2000);
+            }).catch(err => {
+                showError('Failed to copy: ' + err.message);
+            });
+        }
+
+        function showError(message) {
+            errorDiv.textContent = '⚠️ ' + message;
+            errorDiv.classList.add('active');
+            setTimeout(() => {
+                errorDiv.classList.remove('active');
+            }, 5000);
+        }
+
+        // Focus input on load
+        window.onload = () => {
+            latinInput.focus();
+        };
+    </script>
+</body>
+</html>
