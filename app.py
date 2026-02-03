@@ -1,8 +1,8 @@
 from flask import Flask, render_template, request, jsonify, Response
-from transformers import pipeline, TextIteratorStreamer, AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 import time
 import json
-import threading
+import re
 
 app = Flask(__name__)
 
@@ -35,49 +35,68 @@ def transliterate():
     def generate():
         try:
             # Send initial status
-            yield f"data: {json.dumps({'status': 'Generating...', 'request_id': request_id})}\n\n"
+            yield f"data: {json.dumps({'status': 'Starting...', 'request_id': request_id})}\n\n"
 
             # Store that this generation is active
             active_generations[request_id] = True
 
-            # Create streamer for token-by-token output
-            streamer = TextIteratorStreamer(tokenizer, skip_special_tokens=True, skip_prompt=True)
+            # Split text into sentences while preserving punctuation
+            # This pattern captures sentences WITH their ending punctuation
+            sentence_pattern = r'[^.!?]+[.!?]+|[^.!?]+$'
+            sentences = re.findall(sentence_pattern, text)
+            sentences = [s.strip() for s in sentences if s.strip()]
 
-            # Tokenize input
-            inputs = tokenizer(text, return_tensors="pt")
+            # If no sentences found, treat entire text as one sentence
+            if not sentences:
+                sentences = [text]
 
-            # Generation kwargs
-            generation_kwargs = dict(
-                inputs,
-                max_new_tokens=4096,
-                streamer=streamer,
-            )
+            # Process each sentence with beam search
+            all_thaana = []
+            total_sentences = len(sentences)
 
-            # Run generation in background thread
-            def do_transliteration():
-                if request_id in active_generations:
-                    model.generate(**generation_kwargs)
-
-            thread = threading.Thread(target=do_transliteration)
-            thread.start()
-
-            # Stream tokens as they're generated
-            generated_text = ""
-            for new_text in streamer:
+            for idx, sentence in enumerate(sentences, 1):
                 if request_id not in active_generations:
                     # Generation was stopped
-                    yield f"data: {json.dumps({'status': 'Stopped', 'thaana': generated_text, 'partial': True})}\n\n"
+                    yield f"data: {json.dumps({'status': 'Stopped', 'thaana': ' '.join(all_thaana), 'partial': True})}\n\n"
                     return
 
-                generated_text += new_text
-                # Send partial result
-                yield f"data: {json.dumps({'status': 'Generating...', 'thaana': generated_text, 'partial': True})}\n\n"
+                # Update status
+                status_msg = f'Processing sentence {idx}/{total_sentences}...'
+                yield f"data: {json.dumps({'status': status_msg, 'request_id': request_id})}\n\n"
 
-            # Wait for thread to complete
-            thread.join()
+                # Extract ending punctuation to preserve it
+                ending_punct = ''
+                sentence_text = sentence
+                if sentence and sentence[-1] in '.!?':
+                    ending_punct = sentence[-1]
+                    sentence_text = sentence[:-1].strip()
+
+                # Tokenize sentence (without the punctuation)
+                inputs = tokenizer(sentence_text, return_tensors="pt", truncation=False, padding=False)
+
+                # Generate with beam search for quality
+                outputs = model.generate(
+                    **inputs,
+                    max_new_tokens=1024,
+                    num_beams=4,
+                    do_sample=False,
+                    early_stopping=False,
+                    length_penalty=1.2,
+                )
+
+                # Decode the output and add back the punctuation
+                sentence_thaana = tokenizer.decode(outputs[0], skip_special_tokens=True)
+                if ending_punct:
+                    sentence_thaana += ending_punct
+                all_thaana.append(sentence_thaana)
+
+                # Send partial result with completed sentences
+                partial_result = ' '.join(all_thaana)
+                yield f"data: {json.dumps({'status': status_msg, 'thaana': partial_result, 'partial': True})}\n\n"
 
             # Send final result
-            yield f"data: {json.dumps({'status': 'Complete!', 'thaana': generated_text, 'latin': text, 'partial': False})}\n\n"
+            final_thaana = ' '.join(all_thaana)
+            yield f"data: {json.dumps({'status': 'Complete!', 'thaana': final_thaana, 'latin': text, 'partial': False})}\n\n"
 
             # Cleanup
             if request_id in active_generations:
