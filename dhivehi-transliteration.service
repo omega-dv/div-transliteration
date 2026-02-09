@@ -1,29 +1,25 @@
+# Systemd service for Dhivehi Transliteration
+#
+# Setup:
+# 1. Edit paths below (User, WorkingDirectory, Environment, ExecStart)
+# 2. sudo cp dhivehi-transliteration.service /etc/systemd/system/
+# 3. sudo systemctl daemon-reload
+# 4. sudo systemctl enable dhivehi-transliteration
+# 5. sudo systemctl start dhivehi-transliteration
+
 [Unit]
-Description=Dhivehi Transliteration API Service
+Description=Dhivehi Transliteration Web Service
 After=network.target
 
 [Service]
 Type=notify
-# Change these paths to match your server
-User=YOUR_SERVER_USERNAME
-Group=YOUR_SERVER_USERNAME
+User=YOUR_USERNAME
+Group=YOUR_USERNAME
 WorkingDirectory=/path/to/div-transliteration
-Environment="PATH=/path/to/your/python/bin"
-
-# Gunicorn command
-ExecStart=/path/to/your/python/bin/gunicorn -c gunicorn.conf.py app:app
-
-# Restart policy
+Environment="PATH=/path/to/div-transliteration/venv/bin"
+ExecStart=/path/to/div-transliteration/venv/bin/gunicorn -c gunicorn.conf.py app:app
 Restart=always
 RestartSec=10
-
-# Logging
-StandardOutput=append:/var/log/dhivehi-transliteration/access.log
-StandardError=append:/var/log/dhivehi-transliteration/error.log
-
-# Security settings
-PrivateTmp=true
-NoNewPrivileges=true
 
 [Install]
 WantedBy=multi-user.target

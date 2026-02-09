@@ -1,16 +1,22 @@
 from flask import Flask, render_template, request, jsonify, Response
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+import torch
 import time
 import json
 import re
 
 app = Flask(__name__)
 
-# Load model and tokenizer for streaming support
+# Detect GPU and load model
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+if torch.cuda.is_available():
+    print(f"GPU: {torch.cuda.get_device_name(0)}")
+
 print("Loading ByT5 model...")
 model_name = "Neobe/dhivehi-byt5-latin2thaana-v1"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
 print("Model loaded successfully!")
 
 # Store active generations
@@ -160,7 +166,7 @@ def transliterate():
                             yield f"data: {json.dumps({'status': status_msg, 'request_id': request_id, 'progress': progress})}\n\n"
 
                             # Tokenize and generate with full chunk (including overlap for context)
-                            inputs = tokenizer(chunk_text, return_tensors="pt", truncation=False, padding=False)
+                            inputs = tokenizer(chunk_text, return_tensors="pt", truncation=False, padding=False).to(device)
                             outputs = model.generate(
                                 **inputs,
                                 max_new_tokens=512,
